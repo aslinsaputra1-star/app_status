@@ -1,0 +1,263 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Katalog produk dan menu minuman/makanan Warung Bang Kobra",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Nama produk",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "category": {
+          "type": "string",
+          "description": "Kategori produk",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "price": {
+          "type": "number",
+          "description": "Harga produk dalam Rupiah"
+        },
+        "description": {
+          "type": "string",
+          "description": "Deskripsi atau daya tarik produk",
+          "maxLength": 500
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL atau data gambar produk",
+          "maxLength": 500000
+        },
+        "isPopular": {
+          "type": "boolean",
+          "description": "Status produk favorit / laris"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID pemilik produk",
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp waktu dibuat"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp waktu diperbarui"
+        }
+      },
+      "required": ["name", "category", "price", "ownerId"]
+    },
+    "Design": {
+      "title": "Design",
+      "description": "Riwayat dan proyek poster promosi yang telah dibuat",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Judul poster atau promosi",
+          "maxLength": 120
+        },
+        "productId": {
+          "type": "string",
+          "description": "ID referensi produk",
+          "maxLength": 100
+        },
+        "productName": {
+          "type": "string",
+          "description": "Nama produk pada poster",
+          "maxLength": 100
+        },
+        "productPrice": {
+          "type": "number",
+          "description": "Harga produk"
+        },
+        "productImageUrl": {
+          "type": "string",
+          "description": "URL atau foto produk pada canvas",
+          "maxLength": 500000
+        },
+        "styleId": {
+          "type": "string",
+          "description": "ID gaya desain dari 12 gaya yang tersedia",
+          "maxLength": 50
+        },
+        "aspectRatio": {
+          "type": "string",
+          "description": "Format ukuran media sosial",
+          "maxLength": 50
+        },
+        "width": {
+          "type": "number",
+          "description": "Lebar canvas dalam piksel"
+        },
+        "height": {
+          "type": "number",
+          "description": "Tinggi canvas dalam piksel"
+        },
+        "headline": {
+          "type": "string",
+          "description": "Teks headline promosi",
+          "maxLength": 150
+        },
+        "subheadline": {
+          "type": "string",
+          "description": "Teks deskripsi / subheadline",
+          "maxLength": 300
+        },
+        "ctaText": {
+          "type": "string",
+          "description": "Teks call to action",
+          "maxLength": 60
+        },
+        "badgeText": {
+          "type": "string",
+          "description": "Teks badge / stiker diskon",
+          "maxLength": 50
+        },
+        "warungName": {
+          "type": "string",
+          "description": "Nama warung yang ditampilkan",
+          "maxLength": 100
+        },
+        "warungPhone": {
+          "type": "string",
+          "description": "Nomor WhatsApp pemesanan",
+          "maxLength": 30
+        },
+        "warungAddress": {
+          "type": "string",
+          "description": "Alamat warung",
+          "maxLength": 150
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "Warna latar belakang",
+          "maxLength": 30
+        },
+        "textColor": {
+          "type": "string",
+          "description": "Warna teks utama",
+          "maxLength": 30
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "Warna aksen",
+          "maxLength": 30
+        },
+        "showPrice": {
+          "type": "boolean",
+          "description": "Tampilkan harga"
+        },
+        "showLogo": {
+          "type": "boolean",
+          "description": "Tampilkan nama/logo warung"
+        },
+        "showBadge": {
+          "type": "boolean",
+          "description": "Tampilkan stiker/badge"
+        },
+        "showCta": {
+          "type": "boolean",
+          "description": "Tampilkan tombol CTA"
+        },
+        "showContact": {
+          "type": "boolean",
+          "description": "Tampilkan info kontak WhatsApp"
+        },
+        "isFavorite": {
+          "type": "boolean",
+          "description": "Tandai sebagai desain favorit"
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID pemilik desain",
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Waktu dibuat"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Waktu diperbarui"
+        }
+      },
+      "required": ["title", "productName", "styleId", "ownerId"]
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "Pengaturan profil identitas Warung Bang Kobra",
+      "type": "object",
+      "properties": {
+        "warungName": {
+          "type": "string",
+          "description": "Nama resmi warung",
+          "maxLength": 100
+        },
+        "tagline": {
+          "type": "string",
+          "description": "Slogan warung",
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "description": "Nomor WhatsApp",
+          "maxLength": 30
+        },
+        "address": {
+          "type": "string",
+          "description": "Alamat fisik warung",
+          "maxLength": 200
+        },
+        "instagram": {
+          "type": "string",
+          "description": "Username instagram warung",
+          "maxLength": 60
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL atau foto logo warung",
+          "maxLength": 500000
+        },
+        "primaryColor": {
+          "type": "string",
+          "description": "Warna utama branding",
+          "maxLength": 30
+        },
+        "accentColor": {
+          "type": "string",
+          "description": "Warna aksen branding",
+          "maxLength": 30
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "UID pemilik pengaturan",
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Waktu pembaruan"
+        }
+      },
+      "required": ["warungName", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Koleksi produk dan menu Warung Bang Kobra"
+    },
+    "/designs/{designId}": {
+      "schema": { "$ref": "#/entities/Design" },
+      "description": "Koleksi poster promosi yang telah dibuat dan disimpan"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Setting" },
+      "description": "Pengaturan identitas warung milik pengguna"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Warung Bang Kobra — Status Studio AI",
+  "description": "Aplikasi studio pembuatan status dan poster promosi produk warung otomatis dengan AI copywriting, editor grafis canvas profesional, dan katalog produk.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

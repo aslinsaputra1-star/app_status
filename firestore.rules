@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Product Validation ---
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'category', 'price', 'ownerId']) &&
+             data.keys().hasOnly(['id', 'name', 'category', 'price', 'description', 'imageUrl', 'isPopular', 'ownerId', 'createdAt', 'updatedAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 50 &&
+             data.price is number && data.price >= 0 && data.price <= 100000000 &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 500)) &&
+             (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 500000)) &&
+             (!('isPopular' in data) || data.isPopular is bool) &&
+             data.ownerId is string && data.ownerId == request.auth.uid;
+    }
+
+    match /products/{productId} {
+      allow get: if isSignedIn() && (existing().ownerId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(productId) && isValidProduct(incoming());
+      allow update: if isSignedIn() && isValidId(productId) && isValidProduct(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    // --- Design Validation ---
+    function isValidDesign(data) {
+      return data.keys().hasAll(['title', 'productName', 'styleId', 'ownerId']) &&
+             data.title is string && data.title.size() <= 150 &&
+             data.productName is string && data.productName.size() <= 120 &&
+             data.styleId is string && data.styleId.size() <= 60 &&
+             (!('productPrice' in data) || data.productPrice is number) &&
+             (!('productImageUrl' in data) || (data.productImageUrl is string && data.productImageUrl.size() <= 500000)) &&
+             (!('aspectRatio' in data) || (data.aspectRatio is string && data.aspectRatio.size() <= 50)) &&
+             (!('width' in data) || data.width is number) &&
+             (!('height' in data) || data.height is number) &&
+             (!('headline' in data) || (data.headline is string && data.headline.size() <= 200)) &&
+             (!('subheadline' in data) || (data.subheadline is string && data.subheadline.size() <= 400)) &&
+             (!('ctaText' in data) || (data.ctaText is string && data.ctaText.size() <= 80)) &&
+             (!('badgeText' in data) || (data.badgeText is string && data.badgeText.size() <= 80)) &&
+             (!('warungName' in data) || (data.warungName is string && data.warungName.size() <= 120)) &&
+             (!('warungPhone' in data) || (data.warungPhone is string && data.warungPhone.size() <= 40)) &&
+             (!('warungAddress' in data) || (data.warungAddress is string && data.warungAddress.size() <= 200)) &&
+             (!('backgroundColor' in data) || (data.backgroundColor is string && data.backgroundColor.size() <= 40)) &&
+             (!('textColor' in data) || (data.textColor is string && data.textColor.size() <= 40)) &&
+             (!('accentColor' in data) || (data.accentColor is string && data.accentColor.size() <= 40)) &&
+             (!('showPrice' in data) || data.showPrice is bool) &&
+             (!('showLogo' in data) || data.showLogo is bool) &&
+             (!('showBadge' in data) || data.showBadge is bool) &&
+             (!('showCta' in data) || data.showCta is bool) &&
+             (!('showContact' in data) || data.showContact is bool) &&
+             (!('isFavorite' in data) || data.isFavorite is bool) &&
+             data.ownerId is string && data.ownerId == request.auth.uid;
+    }
+
+    match /designs/{designId} {
+      allow get: if isSignedIn() && (existing().ownerId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(designId) && isValidDesign(incoming());
+      allow update: if isSignedIn() && isValidId(designId) && isValidDesign(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+
+    // --- Settings Validation ---
+    function isValidSetting(data) {
+      return data.keys().hasAll(['warungName', 'ownerId']) &&
+             data.warungName is string && data.warungName.size() <= 120 &&
+             (!('tagline' in data) || (data.tagline is string && data.tagline.size() <= 200)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 40)) &&
+             (!('address' in data) || (data.address is string && data.address.size() <= 250)) &&
+             (!('instagram' in data) || (data.instagram is string && data.instagram.size() <= 80)) &&
+             (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 500000)) &&
+             (!('primaryColor' in data) || (data.primaryColor is string && data.primaryColor.size() <= 40)) &&
+             (!('accentColor' in data) || (data.accentColor is string && data.accentColor.size() <= 40)) &&
+             data.ownerId is string && data.ownerId == request.auth.uid;
+    }
+
+    match /settings/{settingId} {
+      allow get: if isSignedIn() && (existing().ownerId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(settingId) && isValidSetting(incoming());
+      allow update: if isSignedIn() && isValidId(settingId) && isValidSetting(incoming()) &&
+                    incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && existing().ownerId == request.auth.uid;
+    }
+  }
+}
