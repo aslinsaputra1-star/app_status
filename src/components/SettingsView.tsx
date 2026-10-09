@@ -17,6 +17,9 @@ import {
   Key,
   CheckCircle2,
   RefreshCw,
+  Download,
+  Copy,
+  Code,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { WarungSettings } from '../types';
@@ -52,6 +55,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('wbk_gh_token') || '');
   const [isPushingGit, setIsPushingGit] = useState<boolean>(false);
   const [gitPushMessage, setGitPushMessage] = useState<string | null>(null);
+  const [showCliCommands, setShowCliCommands] = useState<boolean>(false);
+
+  const cliSnippet = `git remote set-url origin https://github.com/aslinsaputra1-star/app_status.git
+git branch -M main
+git push -u origin main`;
+
+  const copyCliCommands = async () => {
+    try {
+      await navigator.clipboard.writeText(cliSnippet);
+      showToast('Perintah terminal berhasil disalin!', 'success');
+    } catch {
+      showToast('Gagal menyalin perintah', 'error');
+    }
+  };
 
   const handlePushGit = async () => {
     if (!githubToken.trim()) {
@@ -71,14 +88,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         }),
       });
       const data = await res.json();
-      if (res.ok && data?.success) {
+      if (data?.success) {
         setGitPushMessage(data.message || 'Kode berhasil di-push ke GitHub repository!');
         showToast('Berhasil otomatis di-push ke GitHub!', 'success');
       } else {
-        throw new Error(data?.error || 'Gagal push ke GitHub.');
+        const errorMsg = data?.error || 'Gagal melakukan push ke GitHub.';
+        setGitPushMessage(null);
+        showToast(errorMsg, 'error');
       }
     } catch (err: any) {
-      showToast(err?.message || 'Gagal push ke GitHub', 'error');
+      showToast(err?.message || 'Gagal menghubungkan ke GitHub', 'error');
     } finally {
       setIsPushingGit(false);
     }
@@ -247,15 +266,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handlePushGit}
-              disabled={isPushingGit}
-              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-md shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${isPushingGit ? 'animate-spin' : ''}`} />
-              <span>{isPushingGit ? 'Menghubungkan & Melakukan Push...' : 'Hubungkan & Push Otomatis ke GitHub Sekarang'}</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <button
+                type="button"
+                onClick={handlePushGit}
+                disabled={isPushingGit}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-md shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${isPushingGit ? 'animate-spin' : ''}`} />
+                <span>{isPushingGit ? 'Menghubungkan & Melakukan Push...' : 'Hubungkan & Push ke GitHub'}</span>
+              </button>
+
+              <a
+                href="/api/git/download-zip"
+                download="warung_bang_kobra_app_status.zip"
+                className="py-3 px-4 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-bold text-xs uppercase tracking-wider border border-stone-700 transition-colors flex items-center justify-center gap-2 text-center"
+              >
+                <Download className="w-4 h-4 text-emerald-400" />
+                <span>Unduh Proyek (.ZIP)</span>
+              </a>
+            </div>
 
             {gitPushMessage && (
               <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-300 text-xs flex items-center gap-2">

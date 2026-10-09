@@ -444,24 +444,39 @@ app.post('/api/ai/edit-image', async (req, res) => {
 
 // API Route: GitHub Auto-Connect and Push
 app.post('/api/git/push', async (req, res) => {
+  const { exec } = await import('child_process');
+  const { promisify } = await import('util');
+  const execAsync = promisify(exec);
+  const defaultRepoUrl = 'https://github.com/aslinsaputra1-star/app_status.git';
+
   try {
-    const { token, repoUrl = 'https://github.com/aslinsaputra1-star/app_status.git' } = req.body;
-    if (!token || typeof token !== 'string' || !token.trim()) {
-      return res.status(400).json({
+    const { token = '', repoUrl = defaultRepoUrl } = req.body;
+    const rawInput = typeof token === 'string' ? token.trim() : '';
+
+    if (!rawInput) {
+      return res.status(200).json({
         success: false,
-        error: 'GitHub Personal Access Token (PAT) diperlukan.',
+        error: 'GitHub Personal Access Token (PAT) belum diisi. Silakan masukkan token GitHub Anda (awalan ghp_ atau github_pat_).',
       });
     }
 
-    let cleanUrl = repoUrl.trim();
+    // Check if user accidentally pasted terminal commands instead of the token
+    if (rawInput.includes('git remote') || rawInput.includes('git push') || rawInput.includes('git branch')) {
+      return res.status(200).json({
+        success: false,
+        error: 'Teks yang dimasukkan adalah perintah terminal Git, bukan Personal Access Token (PAT). Silakan klik tautan "Buat Token Baru di GitHub" di atas untuk membuat token (awalan ghp_ atau github_pat_), lalu tempelkan token tersebut di sini.',
+      });
+    }
+
+    // Extract PAT if user pasted token within other text
+    const tokenMatch = rawInput.match(/(ghp_[a-zA-Z0-9]{20,}|github_pat_[a-zA-Z0-9_]{20,})/);
+    const cleanToken = tokenMatch ? tokenMatch[0] : rawInput;
+
+    let cleanUrl = (repoUrl || defaultRepoUrl).trim();
     if (cleanUrl.startsWith('https://')) {
       cleanUrl = cleanUrl.replace('https://', '');
     }
-    const authenticatedUrl = `https://${token.trim()}@${cleanUrl}`;
-
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
-    const execAsync = promisify(exec);
+    const authenticatedUrl = `https://${cleanToken}@${cleanUrl}`;
 
     await execAsync('git config user.name "Warung Bang Kobra"');
     await execAsync('git config user.email "smartwrg@gmail.com"');
@@ -469,26 +484,59 @@ app.post('/api/git/push', async (req, res) => {
     try {
       await execAsync('git commit -m "Update: Warung Bang Kobra Studio AI"');
     } catch {
-      // No changes to commit
+      // Nothing to commit
     }
     await execAsync('git branch -M main');
-    await execAsync(`git remote set-url origin "${authenticatedUrl}"`);
-    const pushResult = await execAsync('git push -u origin main');
 
-    // Clean remote url so token is not retained in config
-    await execAsync(`git remote set-url origin "https://${cleanUrl}"`);
-
-    return res.json({
-      success: true,
-      message: 'Kode berhasil otomatis terhubung dan di-push ke GitHub repository!',
-      output: pushResult.stdout || pushResult.stderr,
-    });
+    try {
+      await execAsync(`git remote set-url origin "${authenticatedUrl}"`);
+      const pushResult = await execAsync('git push -u origin main');
+      return res.json({
+        success: true,
+        message: 'Kode berhasil otomatis terhubung dan di-push ke GitHub repository aslinsaputra1-star/app_status!',
+        output: pushResult.stdout || pushResult.stderr,
+      });
+    } finally {
+      // Ensure origin URL is ALWAYS restored without retaining credentials
+      try {
+        await execAsync(`git remote set-url origin "https://${cleanUrl}"`);
+      } catch {}
+    }
   } catch (err: any) {
-    console.error('Git push error:', err);
-    return res.status(500).json({
+    console.warn('Git push notice:', err?.message || err);
+    try {
+      await execAsync(`git remote set-url origin "${defaultRepoUrl}"`);
+    } catch {}
+
+    const errorMsg = String(err?.message || err);
+    let userFriendlyError = 'Gagal melakukan git push.';
+    if (errorMsg.includes('could not read Username') || errorMsg.includes('Authentication failed') || errorMsg.includes('Invalid username or password')) {
+      userFriendlyError = 'Autentikasi GitHub gagal. Pastikan GitHub Personal Access Token (PAT) Anda valid dan memiliki izin "repo".';
+    } else if (errorMsg.includes('Permission to') && errorMsg.includes('denied')) {
+      userFriendlyError = 'Akses ditolak oleh GitHub. Pastikan akun pemilik token memiliki hak akses tulis ke repository aslinsaputra1-star/app_status.';
+    } else {
+      userFriendlyError = errorMsg;
+    }
+
+    return res.status(200).json({
       success: false,
-      error: err?.message || 'Gagal menghubungkan atau push ke GitHub',
+      error: userFriendlyError,
     });
+  }
+});
+
+// API Route: Download Complete Project ZIP
+app.get('/api/git/download-zip', async (_req, res) => {
+  try {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+    const zipPath = path.resolve(__dirname, 'warung_bang_kobra_app_status.zip');
+    await execAsync(`git archive -o "${zipPath}" HEAD`);
+    res.download(zipPath, 'warung_bang_kobra_app_status.zip');
+  } catch (err: any) {
+    console.warn('Zip download notice:', err?.message || err);
+    res.status(500).json({ success: false, error: 'Gagal membuat file ZIP' });
   }
 });
 
