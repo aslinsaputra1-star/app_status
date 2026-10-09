@@ -225,18 +225,24 @@ export const AiImageGeneratorView: React.FC<AiImageGeneratorViewProps> = ({
         }
       }
     } catch (err: any) {
-      console.error('Error generating image:', err);
-      // Run fallback studio composer
-      const composed = await composeStudioProductPhoto(uploadedImage || selectedProduct?.imageUrl, {
-        backgroundTheme,
-        lightingEffect: 'softbox',
-        addWaterDroplets,
-        addIceCubes,
-        aspectRatio: selectedRatio as any,
-      });
-      setResultImage(composed);
-      setGeneratedGallery((prev) => [composed, ...prev]);
-      showToast('Gambar berhasil dibuat dengan Studio Composer!', 'success');
+      console.warn('Notice during image generation, switching to studio composition:', err?.message || err);
+      // Run reliable studio composer
+      try {
+        const composed = await composeStudioProductPhoto(uploadedImage || selectedProduct?.imageUrl, {
+          backgroundTheme,
+          lightingEffect: 'softbox',
+          addWaterDroplets,
+          addIceCubes,
+          aspectRatio: selectedRatio as any,
+        });
+        setResultImage(composed);
+        setGeneratedGallery((prev) => [composed, ...prev]);
+        setApiNotice('Gambar promosi berhasil dibuat menggunakan Studio Render Komposisi Fotografi HD.');
+        showToast('Gambar berhasil dibuat dengan Studio Komposisi!', 'success');
+      } catch (composeErr) {
+        console.warn('Composition fallback notice:', composeErr);
+        showToast('Gagal memproses gambar.', 'error');
+      }
     } finally {
       setIsGenerating(false);
       setCurrentStepText('');

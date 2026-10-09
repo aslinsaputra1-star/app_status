@@ -302,14 +302,28 @@ Quality: Commercial 8k advertising photograph, high detail, vibrant colors. Avoi
       });
     }
   } catch (error: any) {
-    console.error('Error generating AI image:', error);
     const errorMsg = error?.message || 'Gagal memproses pembuatan gambar AI.';
-    const isPaidModelNotice = errorMsg.includes('paid') || errorMsg.includes('quota') || errorMsg.includes('permission') || errorMsg.includes('403');
+    const isQuotaOrPaid =
+      error?.status === 'RESOURCE_EXHAUSTED' ||
+      errorMsg.includes('quota') ||
+      errorMsg.includes('RESOURCE_EXHAUSTED') ||
+      errorMsg.includes('429') ||
+      errorMsg.includes('paid') ||
+      errorMsg.includes('limit: 0');
 
-    return res.status(500).json({
+    if (isQuotaOrPaid) {
+      console.warn('Notice: Gemini image model quota limit reached or free tier limit is 0. Returning studio composer fallback mode.');
+      return res.json({
+        success: false,
+        isQuotaExceeded: true,
+        error: 'Kuota model AI gambar Gemini (gemini-3.1-flash-lite-image) pada paket gratis adalah 0. Studio Otomatis dialihkan ke Studio Render Komposisi Fotografi HD.',
+      });
+    }
+
+    console.warn('Image generation warning:', errorMsg);
+    return res.status(200).json({
       success: false,
       error: errorMsg,
-      isPaidModelNotice,
     });
   }
 });
@@ -402,14 +416,28 @@ app.post('/api/ai/edit-image', async (req, res) => {
       });
     }
   } catch (error: any) {
-    console.error('Error editing AI image:', error);
     const errorMsg = error?.message || 'Gagal mengedit gambar dengan AI.';
-    const isPaidModelNotice = errorMsg.includes('paid') || errorMsg.includes('quota') || errorMsg.includes('permission') || errorMsg.includes('403');
+    const isQuotaOrPaid =
+      error?.status === 'RESOURCE_EXHAUSTED' ||
+      errorMsg.includes('quota') ||
+      errorMsg.includes('RESOURCE_EXHAUSTED') ||
+      errorMsg.includes('429') ||
+      errorMsg.includes('paid') ||
+      errorMsg.includes('limit: 0');
 
-    return res.status(500).json({
+    if (isQuotaOrPaid) {
+      console.warn('Notice: Gemini image edit model quota limit reached or free tier limit is 0.');
+      return res.json({
+        success: false,
+        isQuotaExceeded: true,
+        error: 'Kuota model AI gambar Gemini pada paket gratis adalah 0. Studio Otomatis dialihkan ke Studio Render Komposisi Fotografi HD.',
+      });
+    }
+
+    console.warn('Image edit warning:', errorMsg);
+    return res.status(200).json({
       success: false,
       error: errorMsg,
-      isPaidModelNotice,
     });
   }
 });
