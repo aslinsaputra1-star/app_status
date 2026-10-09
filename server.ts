@@ -414,6 +414,76 @@ app.post('/api/ai/edit-image', async (req, res) => {
   }
 });
 
+// API Route: GitHub Auto-Connect and Push
+app.post('/api/git/push', async (req, res) => {
+  try {
+    const { token, repoUrl = 'https://github.com/aslinsaputra1-star/app_status.git' } = req.body;
+    if (!token || typeof token !== 'string' || !token.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'GitHub Personal Access Token (PAT) diperlukan.',
+      });
+    }
+
+    let cleanUrl = repoUrl.trim();
+    if (cleanUrl.startsWith('https://')) {
+      cleanUrl = cleanUrl.replace('https://', '');
+    }
+    const authenticatedUrl = `https://${token.trim()}@${cleanUrl}`;
+
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+
+    await execAsync('git config user.name "Warung Bang Kobra"');
+    await execAsync('git config user.email "smartwrg@gmail.com"');
+    await execAsync('git add .');
+    try {
+      await execAsync('git commit -m "Update: Warung Bang Kobra Studio AI"');
+    } catch {
+      // No changes to commit
+    }
+    await execAsync('git branch -M main');
+    await execAsync(`git remote set-url origin "${authenticatedUrl}"`);
+    const pushResult = await execAsync('git push -u origin main');
+
+    // Clean remote url so token is not retained in config
+    await execAsync(`git remote set-url origin "https://${cleanUrl}"`);
+
+    return res.json({
+      success: true,
+      message: 'Kode berhasil otomatis terhubung dan di-push ke GitHub repository!',
+      output: pushResult.stdout || pushResult.stderr,
+    });
+  } catch (err: any) {
+    console.error('Git push error:', err);
+    return res.status(500).json({
+      success: false,
+      error: err?.message || 'Gagal menghubungkan atau push ke GitHub',
+    });
+  }
+});
+
+// API Route: Check Git Status
+app.get('/api/git/status', async (_req, res) => {
+  try {
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+    const { stdout } = await execAsync('git log -1 --pretty=format:"%h - %s"');
+    return res.json({
+      success: true,
+      lastCommit: stdout,
+      repo: 'https://github.com/aslinsaputra1-star/app_status.git',
+    });
+  } catch {
+    return res.json({
+      success: false,
+      repo: 'https://github.com/aslinsaputra1-star/app_status.git',
+    });
+  }
+});
+
 // Setup Vite middleware in dev or static files in production
 async function startServer() {
   const isProd = process.env.NODE_ENV === 'production';

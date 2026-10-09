@@ -12,6 +12,11 @@ import {
   LogOut,
   ShieldCheck,
   Database,
+  GitBranch,
+  ExternalLink,
+  Key,
+  CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { WarungSettings } from '../types';
@@ -44,6 +49,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [accentColor, setAccentColor] = useState<string>(settings.accentColor);
   const [logoUrl, setLogoUrl] = useState<string>(settings.logoUrl || '');
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [githubToken, setGithubToken] = useState<string>(() => localStorage.getItem('wbk_gh_token') || '');
+  const [isPushingGit, setIsPushingGit] = useState<boolean>(false);
+  const [gitPushMessage, setGitPushMessage] = useState<string | null>(null);
+
+  const handlePushGit = async () => {
+    if (!githubToken.trim()) {
+      showToast('Masukkan GitHub Personal Access Token (PAT)', 'error');
+      return;
+    }
+    setIsPushingGit(true);
+    setGitPushMessage(null);
+    try {
+      localStorage.setItem('wbk_gh_token', githubToken.trim());
+      const res = await fetch('/api/git/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: githubToken.trim(),
+          repoUrl: 'https://github.com/aslinsaputra1-star/app_status.git',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.success) {
+        setGitPushMessage(data.message || 'Kode berhasil di-push ke GitHub repository!');
+        showToast('Berhasil otomatis di-push ke GitHub!', 'success');
+      } else {
+        throw new Error(data?.error || 'Gagal push ke GitHub.');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Gagal push ke GitHub', 'error');
+    } finally {
+      setIsPushingGit(false);
+    }
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -145,6 +184,84 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <UserCheck className="w-4 h-4" />
                 <span>Masuk Akun Google</span>
               </button>
+            )}
+          </div>
+        </div>
+
+        {/* GitHub Repository Auto-Sync Card */}
+        <div className="bg-stone-900 border border-stone-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-stone-800 border border-stone-700 flex items-center justify-center text-white">
+                <GitBranch className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Sinkronisasi Otomatis GitHub Repository</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    Git Ready
+                  </span>
+                </h3>
+                <p className="text-xs text-stone-400">
+                  Target: <span className="font-mono text-stone-300">https://github.com/aslinsaputra1-star/app_status.git</span>
+                </p>
+              </div>
+            </div>
+
+            <a
+              href="https://github.com/aslinsaputra1-star/app_status"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-amber-400 hover:text-amber-300"
+            >
+              <span>Buka GitHub</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-stone-950 border border-stone-800 space-y-3">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-bold text-stone-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  GitHub Personal Access Token (PAT)
+                </label>
+                <a
+                  href="https://github.com/settings/tokens/new?scopes=repo&description=WarungBangKobraAppStatus"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-amber-400 hover:underline"
+                >
+                  Buat Token Baru di GitHub →
+                </a>
+              </div>
+              <input
+                type="password"
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+                placeholder="Contoh: ghp_xxxxxxxxxxxxxxxxxxxxxx"
+                className="w-full px-3.5 py-2.5 bg-stone-900 border border-stone-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+              />
+              <p className="text-[10px] text-stone-500 mt-1">
+                Token disimpan aman di peramban Anda untuk mengotentikasi push ke repository <code>aslinsaputra1-star/app_status</code>.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handlePushGit}
+              disabled={isPushingGit}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-black text-xs uppercase tracking-wider shadow-md shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isPushingGit ? 'animate-spin' : ''}`} />
+              <span>{isPushingGit ? 'Menghubungkan & Melakukan Push...' : 'Hubungkan & Push Otomatis ke GitHub Sekarang'}</span>
+            </button>
+
+            {gitPushMessage && (
+              <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{gitPushMessage}</span>
+              </div>
             )}
           </div>
         </div>
